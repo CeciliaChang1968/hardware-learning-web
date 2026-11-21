@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="theme-color" content="#0ea5e9">
+  <title>系統平台的組成架構－硬體｜互動學習網</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root {
+      --bg: #f0f9ff;
+      --surface: #ffffff;
+      --surface-2: #e0f2fe;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --primary: #0284c7;
+      --primary-light: #38bdf8;
+      --secondary: #f97316;
+      --accent: #10b981;
+      --purple: #8b5cf6;
+      --pink: #ec4899;
+      --danger: #ef4444;
+      --border: #cbd5e1;
+      --shadow: 0 8px 24px rgba(2, 132, 199, 0.12);
+      --radius: 18px;
+      --base-font: 18px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #334155;
+      --text: #f8fafc;
+      --text-muted: #cbd5e1;
+      --primary: #38bdf8;
+      --primary-light: #0284c7;
+      --border: #475569;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    html {
+      font-size: var(--base-font);
+      scroll-behavior: smooth;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* 裝置模擬容器 */
+    #app-wrapper {
+      margin: 0 auto;
+      width: 100%;
+      max-width: 1280px;
+      min-height: 100vh;
+      transition: max-width 0.35s ease;
+      padding-bottom: 4rem;
+    }
+    body.device-mobile #app-wrapper {
+      max-width: 430px;
+      border-left: 2px solid var(--border);
+      border-right: 2px solid var(--border);
+      background: var(--bg);
+      box-shadow: var(--shadow);
+    }
+    body.device-tablet #app-wrapper {
+      max-width: 820px;
+      border-left: 2px solid var(--border);
+      border-right: 2px solid var(--border);
+    }
+    body.device-desktop #app-wrapper {
+      max-width: 1280px;
+    }
+
+    /* 版面方向強制切換 */
+    body.layout-portrait .grid-2,
+    body.layout-portrait .grid-3 {
+      grid-template-columns: 1fr !important;
+    }
+    body.layout-landscape .grid-2 {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+    body.layout-landscape .grid-3 {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    /* 頁首 */
+    header {
+      background: linear-gradient(135deg, #0284c7, #6366f1, #ec4899);
+      color: #ffffff;
+      padding: 1.2rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-icon {
+      font-size: 2rem;
+      background: rgba(255,255,255,0.2);
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+    }
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .brand p {
+      font-size: 0.85rem;
+      opacity: 0.92;
+    }
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-header {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.45);
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: transform 0.15s, background 0.2s;
+    }
+    .btn-header:hover {
+      background: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+    }
+
+    /* 導覽列 */
+    nav.tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      scrollbar-width: thin;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 2px solid transparent;
+      padding: 0.6rem 1.1rem;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tab-btn:hover { transform: translateY(-2px); border-color: var(--primary); }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+    }
+
+    /* 主內容區 */
+    main { padding: 1.4rem 1.2rem; }
+    .section { display: none; animation: fadeIn 0.35s ease; }
+    .section.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 卡片與網格 */
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.25rem;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.2rem;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    /* 通用按鈕 */
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 12px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+    .btn-secondary { background: var(--secondary); }
+    .btn-accent { background: var(--accent); }
+    .btn-purple { background: var(--purple); }
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+
+    /* 標籤徽章 */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: var(--surface-2);
+      color: var(--primary);
+      margin-right: 0.35rem;
+      margin-bottom: 0.35rem;
+    }
+
+    /* 互動元件 1：五大單元 SVG */
+    .svg-box {
+      width: 100%;
+      background: var(--surface-2);
+      border-radius: 16px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .unit-node {
+      cursor: pointer;
+      transition: transform 0.2s, filter 0.2s;
+    }
+    .unit-node:hover { filter: brightness(1.08); }
+    .unit-info-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 14px;
+      background: var(--surface);
+      border-left: 6px solid var(--secondary);
+      text-align: left;
+    }
+
+    /* 互動元件 2：CPU 機器週期 */
+    .cycle-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .cycle-card {
+      padding: 1rem;
+      border-radius: 14px;
+      border: 2.5px solid var(--border);
+      background: var(--surface-2);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .cycle-card.active {
+      border-color: var(--secondary);
+      background: linear-gradient(135deg, #fff7ed, #ffedd5);
+      color: #9a3412;
+      transform: scale(1.04);
+      box-shadow: 0 6px 16px rgba(249, 115, 22, 0.25);
+    }
+    [data-theme="dark"] .cycle-card.active {
+      background: linear-gradient(135deg, #7c2d12, #9a3412);
+      color: #ffedd5;
+    }
+
+    /* 互動元件 3：記憶體金字塔 */
+    .pyramid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+    .pyr-level {
+      padding: 0.65rem 1rem;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, filter 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+    .pyr-level:hover { transform: scale(1.03); filter: brightness(1.08); }
+
+    /* 練習與測驗選項 */
+    .option-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      margin-bottom: 0.65rem;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .option-btn:hover { border-color: var(--primary); background: var(--surface-2); }
+    .option-btn.correct { border-color: var(--accent); background: #dcfce7; color: #166534; }
+    .option-btn.wrong { border-color: var(--danger); background: #fee2e2; color: #991b1b; }
+
+    /* 設定面板 Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      color: var(--text);
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 22px;
+      padding: 1.5rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+      border: 2px solid var(--primary);
+    }
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-label { font-weight: 800; font-size: 1rem; }
+    .seg-group {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+    .seg-btn {
+      padding: 0.38rem 0.75rem;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .seg-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* 表格樣式 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.8rem 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+    }
+    th { background: var(--surface-2); color: var(--primary); font-weight: 800; }
+
+    /* 輸入框 */
+    input[type="text"] {
+      padding: 0.55rem 0.9rem;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      width: 100%;
+      max-width: 260px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-wrapper">
+    <!-- 頁首 -->
+    <header>
+      <div class="header-top">
+        <div class="brand">
+          <div class="brand-icon">💻</div>
+          <div>
+            <h1 data-i18n="appTitle">系統平台的組成架構－硬體</h1>
+            <p data-i18n="appSubtitle">數位科技概論｜互動視覺化學習網</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-header" id="quickLangBtn" onclick="toggleQuickLang()">🗣️ <span data-i18n="langToggleLabel">切換台語</span></button>
+          <button class="btn-header" onclick="openSettings()">⚙️ <span data-i18n="settingsBtn">顯示與操作設定</span></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 導覽分頁 -->
+    <nav class="tabs" id="mainTabs">
+      <button class="tab-btn active" onclick="switchTab('guide', this)">📘 <span data-i18n="tabGuide">教學與學習指引</span></button>
+      <button class="tab-btn" onclick="switchTab('learn', this)">🧩 <span data-i18n="tabLearn">互動視覺教材</span></button>
+      <button class="tab-btn" onclick="switchTab('extend', this)">🚀 <span data-i18n="tabExtend">進階與延伸</span></button>
+      <button class="tab-btn" onclick="switchTab('practice', this)">🔁 <span data-i18n="tabPractice">反覆演練</span></button>
+      <button class="tab-btn" onclick="switchTab('quiz', this)">📝 <span data-i18n="tabQuiz">單元測驗</span></button>
+      <button class="tab-btn" onclick="switchTab('portfolio', this)">📊 <span data-i18n="tabPortfolio">學習歷程紀錄</span></button>
+    </nav>
+
+    <main>
+      <!-- 分頁 1：教學與學習指引 -->
+      <section id="sec-guide" class="section active">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">👩‍🏫 <span data-i18n="teacherGuideTitle">教師教學指引</span></div>
+            <p data-i18n="teacherGuideIntro">本單元對應高職《數位科技概論》第三章，建議安排 3 至 4 節課，搭配本網站之互動元件進行演示與分組討論。</p>
+            <ul style="margin: 0.8rem 0 0 1.2rem;">
+              <li data-i18n="tg1"><b>第 1 節（五大單元與主機）：</b>操作「五大單元流向圖」，強調控制訊號與資料流向差異，並認識主機板插槽與 I/O 連接埠。</li>
+              <li data-i18n="tg2"><b>第 2 節（CPU 與記憶體）：</b>播放「CPU 機器週期模擬器」，區分擷取週期與執行週期；利用「記憶體金字塔」比較速度與容量。</li>
+              <li data-i18n="tg3"><b>第 3 節（周邊與行動裝置）：</b>比較 HDD vs SSD、OLED vs LCD、三種印表機，並連結統測歷屆試題。</li>
+              <li data-i18n="tg4"><b>第 4 節（評量與歷程）：</b>引導學生完成「反覆演練」與「單元測驗」，最後下載學習歷程報告繳交。</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🎓 <span data-i18n="studentGuideTitle">學生學習指引</span></div>
+            <p data-i18n="studentGuideIntro">歡迎來到硬體架構互動教室！跟著以下四個步驟，輕鬆掌握統測必考重點：</p>
+            <ol style="margin: 0.8rem 0 0 1.2rem;">
+              <li data-i18n="sg1"><b>看懂架構：</b>先到「互動視覺教材」點擊五大單元、CPU 週期與記憶體金字塔，親手操作加深印象。</li>
+              <li data-i18n="sg2"><b>拓展視野：</b>閱讀「進階與延伸」認識企業級 RAID/NAS、環保認證與單晶片電腦。</li>
+              <li data-i18n="sg3"><b>刷題熟練：</b>使用「反覆演練」不限次數練習，答錯立刻看詳解。</li>
+              <li data-i18n="sg4"><b>驗收成果：</b>挑戰「單元測驗」10 題精選統測題，並至「學習歷程紀錄」下載你的專屬報告！</li>
+            </ol>
+            <div style="margin-top: 1rem;">
+              <button class="btn btn-secondary" onclick="switchTab('learn', document.querySelectorAll('.tab-btn')[1])">🚀 <span data-i18n="startLearnBtn">立即開始互動學習</span></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 2：互動視覺教材 -->
+      <section id="sec-learn" class="section">
+        <!-- 互動元件 1：五大單元 -->
+        <div class="card">
+          <div class="card-title">1️⃣ <span data-i18n="comp1Title">電腦硬體五大單元互動圖（點擊各單元查看說明）</span></div>
+          <div class="svg-box">
+            <svg viewBox="0 0 760 320" width="100%" style="max-width:720px; height:auto;">
+              <!-- CPU 外框 -->
+              <rect x="240" y="15" width="280" height="190" rx="18" fill="#fef3c7" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8 4"/>
+              <text x="380" y="38" text-anchor="middle" font-size="16" font-weight="bold" fill="#b45309">中央處理單元 (CPU)</text>
+
+              <!-- 連線箭頭 -->
+              <defs>
+                <marker id="arrowPink" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#ec4899"/></marker>
+                <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#10b981"/></marker>
+              </defs>
+              <!-- 資料流 (粉紅) -->
+              <path d="M 110 185 Q 110 265 280 265" fill="none" stroke="#ec4899" stroke-width="5" marker-end="url(#arrowPink)"/>
+              <path d="M 480 265 Q 650 265 650 185" fill="none" stroke="#ec4899" stroke-width="5" marker-end="url(#arrowPink)"/>
+              <path d="M 320 230 L 320 115" fill="none" stroke="#ec4899" stroke-width="4" marker-end="url(#arrowPink)"/>
+              <path d="M 440 115 L 440 230" fill="none" stroke="#ec4899" stroke-width="4" marker-end="url(#arrowPink)"/>
+              <!-- 控制訊號 (綠) -->
+              <line x1="280" y1="155" x2="180" y2="155" stroke="#10b981" stroke-width="4" marker-end="url(#arrowGreen)"/>
+              <line x1="480" y1="155" x2="580" y2="155" stroke="#10b981" stroke-width="4" marker-end="url(#arrowGreen)"/>
+              <line x1="380" y1="130" x2="380" y2="108" stroke="#10b981" stroke-width="4" marker-end="url(#arrowGreen)"/>
+              <line x1="380" y1="185" x2="380" y2="228" stroke="#10b981" stroke-width="4" marker-end="url(#arrowGreen)"/>
+
+              <!-- 節點 -->
+              <g class="unit-node" onclick="selectUnit('IU')">
+                <rect x="30" y="120" width="145" height="65" rx="14" fill="#38bdf8" stroke="#0284c7" stroke-width="3"/>
+                <text x="102" y="158" text-anchor="middle" font-size="18" font-weight="bold" fill="#fff">輸入單元 IU</text>
+              </g>
+              <g class="unit-node" onclick="selectUnit('ALU')">
+                <rect x="275" y="50" width="210" height="55" rx="14" fill="#fbbf24" stroke="#d97706" stroke-width="3"/>
+                <text x="380" y="83" text-anchor="middle" font-size="17" font-weight="bold" fill="#78350f">算術/邏輯單元 ALU</text>
+              </g>
+              <g class="unit-node" onclick="selectUnit('CU')">
+                <rect x="275" y="130" width="210" height="55" rx="14" fill="#34d399" stroke="#059669" stroke-width="3"/>
+                <text x="380" y="163" text-anchor="middle" font-size="17" font-weight="bold" fill="#064e3b">控制單元 CU</text>
+              </g>
+              <g class="unit-node" onclick="selectUnit('MU')">
+                <rect x="285" y="232" width="190" height="65" rx="14" fill="#fb923c" stroke="#ea580c" stroke-width="3"/>
+                <text x="380" y="270" text-anchor="middle" font-size="18" font-weight="bold" fill="#fff">記憶單元 MU</text>
+              </g>
+              <g class="unit-node" onclick="selectUnit('OU')">
+                <rect x="585" y="120" width="145" height="65" rx="14" fill="#f472b6" stroke="#db2777" stroke-width="3"/>
+                <text x="657" y="158" text-anchor="middle" font-size="18" font-weight="bold" fill="#fff">輸出單元 OU</text>
+              </g>
+            </svg>
+            <div style="font-size:0.88rem; margin-top:0.4rem;">
+              <span style="color:#10b981; font-weight:800;">━━▶</span> <span data-i18n="legendCtrl">控制訊號傳輸方向</span> &nbsp;&nbsp;
+              <span style="color:#ec4899; font-weight:800;">━━▶</span> <span data-i18n="legendData">資料（含指令）傳輸方向</span>
+            </div>
+            <div class="unit-info-box" id="unitInfoBox">
+              <strong data-i18n="unitHint">👆 請點擊上方任一個單元方塊，查看詳細功能與常見設備！</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 互動元件 2：CPU 機器週期 -->
+        <div class="card">
+          <div class="card-title">2️⃣ <span data-i18n="comp2Title">CPU 機器週期（Machine Cycle）動態模擬器</span></div>
+          <p data-i18n="comp2Desc">CPU 執行一個指令包含 4 個步驟：前兩步合稱「擷取週期」，後兩步合稱「執行週期」，速率單位常以 MIPS 或 GHz 表示。</p>
+          <div class="cycle-steps">
+            <div class="cycle-card active" id="cyc-0" onclick="setCycleStep(0)">
+              <div style="font-size:1.6rem;">📥</div>
+              <b data-i18n="cyc0Title">1. 擷取 (Fetch)</b>
+              <div class="badge" style="margin-top:0.4rem;" data-i18n="fetchCycle">擷取週期</div>
+            </div>
+            <div class="cycle-card" id="cyc-1" onclick="setCycleStep(1)">
+              <div style="font-size:1.6rem;">🔍</div>
+              <b data-i18n="cyc1Title">2. 解碼 (Decode)</b>
+              <div class="badge" style="margin-top:0.4rem;" data-i18n="fetchCycle">擷取週期</div>
+            </div>
+            <div class="cycle-card" id="cyc-2" onclick="setCycleStep(2)">
+              <div style="font-size:1.6rem;">⚙️</div>
+              <b data-i18n="cyc2Title">3. 執行 (Execute)</b>
+              <div class="badge" style="margin-top:0.4rem;" data-i18n="execCycle">執行週期</div>
+            </div>
+            <div class="cycle-card" id="cyc-3" onclick="setCycleStep(3)">
+              <div style="font-size:1.6rem;">💾</div>
+              <b data-i18n="cyc3Title">4. 儲存 (Store)</b>
+              <div class="badge" style="margin-top:0.4rem;" data-i18n="execCycle">執行週期</div>
+            </div>
+          </div>
+          <div class="unit-info-box" id="cycleInfoBox"></div>
+          <div style="margin-top:0.9rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button class="btn" onclick="nextCycleStep()">⏭️ <span data-i18n="nextStepBtn">下一步</span></button>
+            <button class="btn btn-accent" id="autoCycleBtn" onclick="toggleAutoCycle()">▶️ <span data-i18n="autoPlayBtn">自動演示</span></button>
+          </div>
+        </div>
+
+        <!-- 互動元件 3：記憶體金字塔 & SSD vs HDD -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">3️⃣ <span data-i18n="comp3Title">記憶體階層金字塔（點擊比較速度與容量）</span></div>
+            <div class="pyramid">
+              <div class="pyr-level" style="width:42%; background:#ef4444;" onclick="selectMem(0)">暫存器 (Register)</div>
+              <div class="pyr-level" style="width:58%; background:#f97316;" onclick="selectMem(1)">快取記憶體 (Cache L1/L2/L3)</div>
+              <div class="pyr-level" style="width:76%; background:#10b981;" onclick="selectMem(2)">主記憶體 (DRAM / ROM)</div>
+              <div class="pyr-level" style="width:94%; background:#0284c7;" onclick="selectMem(3)">輔助記憶體 (SSD / HDD / 光碟)</div>
+            </div>
+            <div class="unit-info-box" id="memInfoBox">
+              <strong data-i18n="memHint">👆 點擊金字塔各層：越往上速度越快、容量越小、單價越高！</strong>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">4️⃣ <span data-i18n="comp4Title">連接埠與周邊設備速查</span></div>
+            <div class="grid-2" style="gap:0.6rem;">
+              <button class="btn btn-outline" onclick="selectPort('usb')">🔌 USB / Type-C / OTG</button>
+              <button class="btn btn-outline" onclick="selectPort('hdmi')">📺 HDMI / DisplayPort</button>
+              <button class="btn btn-outline" onclick="selectPort('tb')">⚡ Thunderbolt 4</button>
+              <button class="btn btn-outline" onclick="selectPort('rj45')">🌐 RJ-45 網路埠</button>
+              <button class="btn btn-outline" onclick="selectPort('audio')">🎧 Line-out / Mic-in</button>
+              <button class="btn btn-outline" onclick="selectPort('m2')">🚀 M.2 / PCI-E 插槽</button>
+            </div>
+            <div class="unit-info-box" id="portInfoBox" style="margin-top:0.9rem;">
+              <strong data-i18n="portHint">👆 點擊上方任一連接埠，檢視傳輸速度與用途！</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 3：進階與延伸學習 -->
+      <section id="sec-extend" class="section">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">🏢 <span data-i18n="ext1Title">企業級硬碟技術：RAID、SAS、NAS</span></div>
+            <p data-i18n="ext1Desc">企業環境需要大容量、高速度與資料備援，常使用以下三大技術：</p>
+            <ul style="margin:0.7rem 0 0 1.2rem;">
+              <li><b>RAID（磁碟陣列）：</b>RAID 0 合併多顆硬碟提升容量與速度；RAID 1 採「鏡像功能」同步備份資料。</li>
+              <li><b>SAS（序列式 SCSI）：</b>高速連接埠標準，第 4 代傳輸速度可達 24Gbps。</li>
+              <li><b>NAS（網路附接儲存器）：</b>小型雲端硬碟伺服器，可透過網路隨時隨地存取與自動備份。</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🌿 <span data-i18n="ext2Title">資訊產品的環保認證</span></div>
+            <ul style="margin:0.7rem 0 0 1.2rem;">
+              <li><b>RoHS（歐盟危害性物質限制指令）：</b>規範製造商限用或禁用鉛、汞、鎘等有害化學物質。</li>
+              <li><b>EPEAT（美國電子產品環境影響評價制度）：</b>評估電子產品是否符合綠色環保標準。</li>
+            </ul>
+            <hr style="margin:1rem 0; border-color:var(--border);">
+            <div class="card-title">🖨️ <span data-i18n="ext3Title">特殊功能印表機與顯示技術</span></div>
+            <p data-i18n="ext3Desc">除了點矩陣（撞擊式/cps）、噴墨（CMYK/ppm）與雷射（碳粉加熱加壓/ppm）外，還有 3D 印表機（可印模型、零件甚至食物）與新一代自發光 Micro LED 顯示器。</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🤖 <span data-i18n="ext4Title">單晶片電腦（Single-Board Computer）與行動裝置</span></div>
+          <div class="grid-3">
+            <div style="background:var(--surface-2); padding:1rem; border-radius:14px;">
+              <h4>🍓 Raspberry Pi（樹莓派）</h4>
+              <p style="font-size:0.92rem;">英國樹莓派基金會研發，以 Linux 為基礎，接上螢幕鍵盤即如小型個人電腦。</p>
+            </div>
+            <div style="background:var(--surface-2); padding:1rem; border-radius:14px;">
+              <h4>♾️ Arduino</h4>
+              <p style="font-size:0.92rem;">軟硬體開源，可外接超音波、紅外線、伺服馬達等感測器，使用 C 語言開發。</p>
+            </div>
+            <div style="background:var(--surface-2); padding:1rem; border-radius:14px;">
+              <h4>💡 micro:bit</h4>
+              <p style="font-size:0.92rem;">BBC 與微軟合作推出，內建 LED 矩陣與感測器，專為程式設計教育打造。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 4：反覆演練 -->
+      <section id="sec-practice" class="section">
+        <div class="card">
+          <div class="card-title">🔁 <span data-i18n="practiceTitle">觀念反覆演練（即時回饋＋詳解）</span></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+            <span class="badge" id="practiceCounter">第 1 / 8 題</span>
+            <button class="btn btn-purple" onclick="shufflePractice()">🔀 <span data-i18n="shuffleBtn">隨機出題</span></button>
+          </div>
+          <h3 id="practiceQ" style="margin-bottom:1rem;"></h3>
+          <div id="practiceOptions"></div>
+          <div id="practiceFeedback" class="unit-info-box" style="display:none;"></div>
+          <div style="margin-top:1rem;">
+            <button class="btn" onclick="nextPractice()">➡️ <span data-i18n="nextQBtn">下一題</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 5：單元測驗 -->
+      <section id="sec-quiz" class="section">
+        <div class="card" id="quizStartCard">
+          <div class="card-title">📝 <span data-i18n="quizTitle">單元綜合測驗（精選 10 題統測與課本習題）</span></div>
+          <p data-i18n="quizDesc">完成測驗後將自動計分並寫入「學習歷程紀錄」，準備好就開始挑戰吧！</p>
+          <div style="margin-top:1rem;">
+            <button class="btn btn-secondary" onclick="startQuiz()">🚀 <span data-i18n="startQuizBtn">開始測驗</span></button>
+          </div>
+        </div>
+
+        <div class="card" id="quizPlayCard" style="display:none;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.8rem;">
+            <span class="badge" id="quizProgress">1 / 10</span>
+            <span class="badge" id="quizScoreLive">得分：0</span>
+          </div>
+          <h3 id="quizQ" style="margin-bottom:1rem;"></h3>
+          <div id="quizOptions"></div>
+        </div>
+
+        <div class="card" id="quizResultCard" style="display:none;">
+          <div class="card-title">🏆 <span data-i18n="quizResultTitle">測驗結果報告</span></div>
+          <h2 id="quizFinalScore" style="color:var(--secondary); margin:0.6rem 0;"></h2>
+          <p id="quizComment"></p>
+          <div style="margin-top:1rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button class="btn" onclick="startQuiz()">🔄 <span data-i18n="retryQuizBtn">再測一次</span></button>
+            <button class="btn btn-accent" onclick="switchTab('portfolio', document.querySelectorAll('.tab-btn')[5])">📊 <span data-i18n="viewPortfolioBtn">查看學習歷程</span></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 分頁 6：學習歷程紀錄 -->
+      <section id="sec-portfolio" class="section">
+        <div class="card">
+          <div class="card-title">📊 <span data-i18n="portfolioTitle">個人學習歷程紀錄與下載</span></div>
+          <div style="display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem;">
+            <label><b data-i18n="studentNameLabel">學生姓名／座號：</b></label>
+            <input type="text" id="studentNameInput" placeholder="例如：資二甲 01 王小明" oninput="saveStudentName()">
+          </div>
+          <div class="grid-3" id="portfolioStats" style="margin-bottom:1rem;"></div>
+          <h4 style="margin-bottom:0.5rem;" data-i18n="logListTitle">詳細學習軌跡：</h4>
+          <div id="portfolioLogs" style="max-height:260px; overflow-y:auto; background:var(--surface-2); padding:0.9rem; border-radius:12px; font-size:0.92rem;"></div>
+          <div style="margin-top:1.1rem; display:flex; gap:0.7rem; flex-wrap:wrap;">
+            <button class="btn btn-accent" onclick="downloadPortfolio('txt')">⬇️ <span data-i18n="dlTxtBtn">下載學習報告 (.txt)</span></button>
+            <button class="btn btn-purple" onclick="downloadPortfolio('json')">⬇️ <span data-i18n="dlJsonBtn">下載原始紀錄 (.json)</span></button>
+            <button class="btn btn-outline" onclick="clearPortfolio()">🗑️ <span data-i18n="clearLogBtn">清除紀錄</span></button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 顯示與操作設定 Modal -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+        <h2 style="font-size:1.3rem; color:var(--primary);">⚙️ <span data-i18n="settingsTitle">顯示與操作設定</span></h2>
+        <button class="btn btn-outline" style="padding:0.3rem 0.7rem;" onclick="closeSettings()">✕</button>
+      </div>
+
+      <!-- (1) 全螢幕 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setFullscreen">1. 全螢幕</span>
+        <div class="seg-group">
+          <button class="seg-btn" id="fs-on" onclick="setFullscreen(true)" data-i18n="optOn">開啟</button>
+          <button class="seg-btn active" id="fs-off" onclick="setFullscreen(false)" data-i18n="optOff">關閉</button>
+        </div>
+      </div>
+
+      <!-- (2) 音效 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setSound">2. 音效</span>
+        <div class="seg-group">
+          <button class="seg-btn active" id="snd-on" onclick="setSound(true)" data-i18n="optOn">開啟</button>
+          <button class="seg-btn" id="snd-off" onclick="setSound(false)" data-i18n="optOff">關閉</button>
+        </div>
+      </div>
+
+      <!-- (3) 裝置 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setDevice">3. 裝置模式</span>
+        <div class="seg-group">
+          <button class="seg-btn active" id="dev-auto" onclick="setDevice('auto')" data-i18n="optAuto">自動</button>
+          <button class="seg-btn" id="dev-mobile" onclick="setDevice('mobile')" data-i18n="optMobile">手機</button>
+          <button class="seg-btn" id="dev-tablet" onclick="setDevice('tablet')" data-i18n="optTablet">平板</button>
+          <button class="seg-btn" id="dev-desktop" onclick="setDevice('desktop')" data-i18n="optDesktop">電腦</button>
+        </div>
+      </div>
+
+      <!-- (4) 版面 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setLayout">4. 版面方向</span>
+        <div class="seg-group">
+          <button class="seg-btn active" id="lay-auto" onclick="setLayout('auto')" data-i18n="optAuto">自動</button>
+          <button class="seg-btn" id="lay-portrait" onclick="setLayout('portrait')" data-i18n="optPortrait">直式</button>
+          <button class="seg-btn" id="lay-landscape" onclick="setLayout('landscape')" data-i18n="optLandscape">橫式</button>
+        </div>
+      </div>
+
+      <!-- (5) 語言 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setLang">5. 介面語言</span>
+        <div class="seg-group">
+          <button class="seg-btn active" id="lang-zh" onclick="setLang('zh')">國語</button>
+          <button class="seg-btn" id="lang-tw" onclick="setLang('tw')">台灣台語</button>
+        </div>
+      </div>
+
+      <!-- (6) 字體 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setFont">6. 字體大小</span>
+        <div class="seg-group">
+          <button class="seg-btn" id="font-sm" onclick="setFontSize('sm')" data-i18n="optSmall">縮小</button>
+          <button class="seg-btn active" id="font-md" onclick="setFontSize('md')" data-i18n="optNormal">標準</button>
+          <button class="seg-btn" id="font-lg" onclick="setFontSize('lg')" data-i18n="optLarge">放大</button>
+        </div>
+      </div>
+
+      <!-- (7) 色系 -->
+      <div class="setting-row">
+        <span class="setting-label" data-i18n="setTheme">7. 色系主題</span>
+        <div class="seg-group">
+          <button class="seg-btn active" id="thm-system" onclick="setTheme('system')" data-i18n="optSystem">跟隨系統</button>
+          <button class="seg-btn" id="thm-light" onclick="setTheme('light')" data-i18n="optLight">亮色</button>
+          <button class="seg-btn" id="thm-dark" onclick="setTheme('dark')" data-i18n="optDark">暗色</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========= 1. Web Audio API 音效引擎 =========
+    let soundEnabled = true;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playTone(type = 'click') {
+      if (!soundEnabled) return;
+      if (!audioCtx) audioCtx = new AudioCtx();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        osc.frequency.setValueAtTime(520, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now); osc.stop(now + 0.08);
+      } else if (type === 'ok') {
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.1);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.start(now); osc.stop(now + 0.25);
+      } else if (type === 'err') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(160, now + 0.12);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now); osc.stop(now + 0.28);
+      }
+    }
+
+    // ========= 2. 國語／台灣台語 雙語字典 =========
+    let currentLang = 'zh';
+    const i18n = {
+      zh: {
+        appTitle: '系統平台的組成架構－硬體',
+        appSubtitle: '數位科技概論｜互動視覺化學習網',
+        langToggleLabel: '切換台語',
+        settingsBtn: '顯示與操作設定',
+        tabGuide: '教學與學習指引',
+        tabLearn: '互動視覺教材',
+        tabExtend: '進階與延伸',
+        tabPractice: '反覆演練',
+        tabQuiz: '單元測驗',
+        tabPortfolio: '學習歷程紀錄',
+        teacherGuideTitle: '教師教學指引',
+        teacherGuideIntro: '本單元對應高職《數位科技概論》第三章，建議安排 3 至 4 節課，搭配本網站之互動元件進行演示與分組討論。',
+        studentGuideTitle: '學生學習指引',
+        studentGuideIntro: '歡迎來到硬體架構互動教室！跟著以下四個步驟，輕鬆掌握統測必考重點：',
+        startLearnBtn: '立即開始互動學習',
+        comp1Title: '電腦硬體五大單元互動圖（點擊各單元查看說明）',
+        legendCtrl: '控制訊號傳輸方向',
+        legendData: '資料（含指令）傳輸方向',
+        unitHint: '👆 請點擊上方任一個單元方塊，查看詳細功能與常見設備！',
+        comp2Title: 'CPU 機器週期（Machine Cycle）動態模擬器',
+        comp2Desc: 'CPU 執行一個指令包含 4 個步驟：前兩步合稱「擷取週期」，後兩步合稱「執行週期」，速率單位常以 MIPS 或 GHz 表示。',
+        cyc0Title: '1. 擷取 (Fetch)', cyc1Title: '2. 解碼 (Decode)',
+        cyc2Title: '3. 執行 (Execute)', cyc3Title: '4. 儲存 (Store)',
+        fetchCycle: '擷取週期', execCycle: '執行週期',
+        nextStepBtn: '下一步', autoPlayBtn: '自動演示',
+        comp3Title: '記憶體階層金字塔（點擊比較速度與容量）',
+        memHint: '👆 點擊金字塔各層：越往上速度越快、容量越小、單價越高！',
+        comp4Title: '連接埠與周邊設備速查',
+        portHint: '👆 點擊上方任一連接埠，檢視傳輸速度與用途！',
+        practiceTitle: '觀念反覆演練（即時回饋＋詳解）',
+        shuffleBtn: '隨機出題', nextQBtn: '下一題',
+        quizTitle: '單元綜合測驗（精選 10 題統測與課本習題）',
+        quizDesc: '完成測驗後將自動計分並寫入「學習歷程紀錄」，準備好就開始挑戰吧！',
+        startQuizBtn: '開始測驗', quizResultTitle: '測驗結果報告',
+        retryQuizBtn: '再測一次', viewPortfolioBtn: '查看學習歷程',
+        portfolioTitle: '個人學習歷程紀錄與下載',
+        studentNameLabel: '學生姓名／座號：',
+        logListTitle: '詳細學習軌跡：',
+        dlTxtBtn: '下載學習報告 (.txt)', dlJsonBtn: '下載原始紀錄 (.json)', clearLogBtn: '清除紀錄',
+        settingsTitle: '顯示與操作設定',
+        setFullscreen: '1. 全螢幕', setSound: '2. 音效', setDevice: '3. 裝置模式',
+        setLayout: '4. 版面方向', setLang: '5. 介面語言', setFont: '6. 字體大小', setTheme: '7. 色系主題',
+        optOn: '開啟', optOff: '關閉', optAuto: '自動', optMobile: '手機', optTablet: '平板', optDesktop: '電腦',
+        optPortrait: '直式', optLandscape: '橫式', optSmall: '縮小', optNormal: '標準', optLarge: '放大',
+        optSystem: '跟隨系統', optLight: '亮色', optDark: '暗色'
+      },
+      tw: {
+        appTitle: '系統平台的組成架構－硬體',
+        appSubtitle: '數位科技概論｜互動視覺化學習網（台語版）',
+        langToggleLabel: '切換國語',
+        settingsBtn: '顯示佮操作設定',
+        tabGuide: '教學佮學習指引',
+        tabLearn: '互動視覺教材',
+        tabExtend: '進階佮延伸',
+        tabPractice: '反覆練習',
+        tabQuiz: '單元考試',
+        tabPortfolio: '學習歷程紀錄',
+        teacherGuideTitle: '老師教學指引',
+        teacherGuideIntro: '這个單元對應高職《數位科技概論》第三章，建議安排 3 到 4 節課，配合這个網站的互動元件來示範佮分組討論。',
+        studentGuideTitle: '學生學習指引',
+        studentGuideIntro: '歡迎來到硬體架構互動教室！綴著下跤這四个步驟，輕鬆掌握統測一定會考的重點：',
+        startLearnBtn: '隨開始互動學習',
+        comp1Title: '電腦硬體五大單元互動圖（揤逐个單元看解說）',
+        legendCtrl: '控制訊號傳送的方向',
+        legendData: '資料（含指令）傳送的方向',
+        unitHint: '👆 請揤頂懸任何一个單元格仔，看詳細功能佮常見的設備！',
+        comp2Title: 'CPU 機器週期（Machine Cycle）動態模擬器',
+        comp2Desc: 'CPU 執行一个指令有 4 个步驟：頭兩步合稱「擷取週期」，後兩步合稱「執行週期」，速度單位定定用 MIPS 抑是 GHz 來表示。',
+        cyc0Title: '1. 擷取 (Fetch)', cyc1Title: '2. 解碼 (Decode)',
+        cyc2Title: '3. 執行 (Execute)', cyc3Title: '4. 儲存 (Store)',
+        fetchCycle: '擷取週期', execCycle: '執行週期',
+        nextStepBtn: '後一步', autoPlayBtn: '自動示範',
+        comp3Title: '記憶體階層金字塔（揤來比較速度佮容量）',
+        memHint: '👆 揤金字塔逐層：愈頂懸速度愈緊、容量愈細、價數愈貴！',
+        comp4Title: '連接埠佮周邊設備緊查',
+        portHint: '👆 揤頂懸任何一个連接埠，看傳送速度佮用途！',
+        practiceTitle: '觀念反覆練習（隨有回饋＋詳解）',
+        shuffleBtn: '隨機出題', nextQBtn: '後一題',
+        quizTitle: '單元綜合考試（精選 10 題統測佮課本習題）',
+        quizDesc: '考完會自動算分，閣會寫入去「學習歷程紀錄」，準備好就開始挑戰啦！',
+        startQuizBtn: '開始考試', quizResultTitle: '考試結果報告',
+        retryQuizBtn: '閣考一擺', viewPortfolioBtn: '看學習歷程',
+        portfolioTitle: '個人學習歷程紀錄佮下載',
+        studentNameLabel: '學生名姓／座號：',
+        logListTitle: '詳細學習足跡：',
+        dlTxtBtn: '下載學習報告 (.txt)', dlJsonBtn: '下載原始紀錄 (.json)', clearLogBtn: '清掉紀錄',
+        settingsTitle: '顯示佮操作設定',
+        setFullscreen: '1. 全螢幕', setSound: '2. 音效', setDevice: '3. 裝置模式',
+        setLayout: '4. 版面方向', setLang: '5. 介面語言', setFont: '6. 字體大細', setTheme: '7. 色系主題',
+        optOn: '拍開', optOff: '關掉', optAuto: '自動', optMobile: '手機仔', optTablet: '平板', optDesktop: '電腦',
+        optPortrait: '直式', optLandscape: '橫式', optSmall: '縮小', optNormal: '標準', optLarge: '放大',
+        optSystem: '綴系統', optLight: '光色', optDark: '暗色'
+      }
+    };
+
+    function applyI18n() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[currentLang][key]) el.textContent = i18n[currentLang][key];
+      });
+      setCycleStep(cycleIdx, false);
+    }
+
+    function toggleQuickLang() {
+      setLang(currentLang === 'zh' ? 'tw' : 'zh');
+    }
+
+    // ========= 3. 互動元件邏輯 =========
+    const unitData = {
+      IU: { zh: '<b>輸入單元 (Input Unit)：</b>電腦接受指令與輸入資料的管道。常見設備：鍵盤、滑鼠、掃描器、麥克風、晶片讀卡機、網路攝影機。', tw: '<b>輸入單元 (Input Unit)：</b>電腦接受指令佮輸入資料的管道。常見設備：鍵盤、滑鼠、掃描器、麥克風、晶片讀卡機。' },
+      CU: { zh: '<b>控制單元 (Control Unit)：</b>電腦的大腦指揮官，負責指令解碼、資料傳遞與協調各單元運作。與 ALU 合稱為 CPU。', tw: '<b>控制單元 (Control Unit)：</b>電腦的總指揮，負責解碼指令、傳送資料佮協調逐个單元運作。佮 ALU 合稱做 CPU。' },
+      ALU: { zh: '<b>算術/邏輯單元 (ALU)：</b>負責所有數值的加減乘除運算與邏輯判斷（如大於、小於、等於）。', tw: '<b>算術/邏輯單元 (ALU)：</b>負責所有數字的加減乘除計算佮邏輯判斷。' },
+      MU: { zh: '<b>記憶單元 (Memory Unit)：</b>存放程式與資料的地方，分為暫存的主記憶體（RAM）與長期儲存的輔助記憶體（SSD、HDD）。', tw: '<b>記憶單元 (Memory Unit)：</b>囥程式佮資料的所在，分做暫存的主記憶體（RAM）佮長期儲存的輔助記憶體（SSD、HDD）。' },
+      OU: { zh: '<b>輸出單元 (Output Unit)：</b>將運算結果呈現給使用者的管道。常見設備：顯示器（螢幕）、印表機、喇叭、投影機。', tw: '<b>輸出單元 (Output Unit)：</b>共算好的結果顯示予使用者看的管道。常見設備：螢幕、印表機、喇叭、投影機。' }
+    };
+
+    function selectUnit(id) {
+      playTone('click');
+      document.getElementById('unitInfoBox').innerHTML = unitData[id][currentLang];
+      addLog(`探索五大單元：${id}`);
+    }
+
+    let cycleIdx = 0, cycleTimer = null;
+    const cycleDesc = [
+      { zh: '<b>步驟 1 擷取 (Fetch)：</b>控制單元依「程式計數器 (PC)」位址，從主記憶體擷取指令與資料至指令暫存器 (IR)。', tw: '<b>步驟 1 擷取 (Fetch)：</b>控制單元照「程式計數器 (PC)」的位址，對主記憶體提指令佮資料。' },
+      { zh: '<b>步驟 2 解碼 (Decode)：</b>控制單元將指令解碼，並把運算所需的資料傳送到算術/邏輯單元 (ALU)。', tw: '<b>步驟 2 解碼 (Decode)：</b>控制單元共指令解碼，閣共欲算的資料送到算術/邏輯單元 (ALU)。' },
+      { zh: '<b>步驟 3 執行 (Execute)：</b>算術/邏輯單元 (ALU) 進行資料的算術運算或邏輯判斷。', tw: '<b>步驟 3 執行 (Execute)：</b>算術/邏輯單元 (ALU) 開始做資料的計算抑是邏輯判斷。' },
+      { zh: '<b>步驟 4 儲存 (Store)：</b>控制單元將運算結果存回累加器 (ACC) 或主記憶體中，完成一個機器週期！', tw: '<b>步驟 4 儲存 (Store)：</b>控制單元共算好的結果囥轉去累加器 (ACC) 抑是主記憶體，按呢就完成一个機器週期！' }
+    ];
+
+    function setCycleStep(idx, sound = true) {
+      if (sound) playTone('click');
+      cycleIdx = idx;
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('cyc-' + i).classList.toggle('active', i === idx);
+      }
+      document.getElementById('cycleInfoBox').innerHTML = cycleDesc[idx][currentLang];
+    }
+    function nextCycleStep() { setCycleStep((cycleIdx + 1) % 4); }
+    function toggleAutoCycle() {
+      playTone('click');
+      if (cycleTimer) {
+        clearInterval(cycleTimer); cycleTimer = null;
+        document.getElementById('autoCycleBtn').textContent = '▶️ ' + i18n[currentLang].autoPlayBtn;
+      } else {
+        cycleTimer = setInterval(nextCycleStep, 1800);
+        document.getElementById('autoCycleBtn').textContent = '⏸️ 暫停';
+        addLog('操作 CPU 機器週期模擬器');
+      }
+    }
+
+    const memData = [
+      '<b>暫存器 (Register)：</b>位於 CPU 內部，速度<b>最快</b>、容量最小（約 16~128 bits），如 PC（下一個指令位址）、IR（正在執行的指令）、ACC（運算結果）。',
+      '<b>快取記憶體 (Cache)：</b>採用 <b>SRAM</b>（靜態、免充電、成本高），分為 L1 > L2 > L3，用來減少 CPU 存取主記憶體的延遲時間。',
+      '<b>主記憶體 (Main Memory)：</b>RAM（DRAM 需週期性充電、揮發性）與 ROM（非揮發性，如 EEPROM 智慧卡、Flash Memory 手機/隨身碟）。',
+      '<b>輔助記憶體 (Auxiliary Memory)：</b>非揮發性、容量最大。<b>SSD</b>（快閃記憶體、耐震、無噪音、不需磁碟重組）vs <b>HDD</b>（磁盤磁軌、怕晃動、單位價格便宜）。'
+    ];
+    function selectMem(i) {
+      playTone('click');
+      document.getElementById('memInfoBox').innerHTML = memData[i];
+      addLog('檢視記憶體階層金字塔');
+    }
+
+    const portData = {
+      usb: '<b>USB / Type-C / OTG：</b>支援隨插即用 (PnP) 與熱插拔。Type-C 正反皆可插，USB 4 速率達 40Gbps；USB OTG 可讓手機直接讀取隨身碟。',
+      hdmi: '<b>HDMI / DisplayPort：</b>皆可同時傳輸數位視訊與音訊。DisplayPort 另支援串接多台螢幕。',
+      tb: '<b>Thunderbolt 4：</b>採用 Type-C 接頭，與 USB4 通用，最高速率 40Gbps，可雙向同步傳輸資料、影音並供電。',
+      rj45: '<b>RJ-45 網路埠：</b>用來連接集線器、交換器或路由器等有線網路設備（無法傳輸視訊）。',
+      audio: '<b>音源插孔：</b>Line-out（綠色）接喇叭或耳機；Line-in（藍色）接錄音筆等外部音源；Mic-in（粉紅）接麥克風。',
+      m2: '<b>M.2 與 PCI-E 插槽：</b>主機板內部高速介面。M.2 走 PCI-E 通道連接固態硬碟 (SSD)，速度比 SATA3 (6Gbps) 更快；PCI-E x16 常插顯示卡。'
+    };
+    function selectPort(k) {
+      playTone('click');
+      document.getElementById('portInfoBox').innerHTML = portData[k];
+      addLog(`查詢連接埠：${k.toUpperCase()}`);
+    }
+
+    // ========= 4. 題庫（源自課本統測題與本章習題） =========
+    const questionBank = [
+      { q: '下列何者「不是」電腦硬體架構的五大單元之一？', opts: ['輸入單元 (IU)', '機殼單元 (Case Unit)', '控制單元 (CU)', '記憶單元 (MU)'], ans: 1, exp: '電腦五大單元為：輸入、控制、算術/邏輯、記憶、輸出單元，不包含機殼單元。' },
+      { q: '為了減少 CPU 存取主記憶體所需的平均時間，可使用哪一種記憶體？', opts: ['快閃記憶體 (Flash)', '快取記憶體 (Cache)', '輔助記憶體', '動態記憶體 (DRAM)'], ans: 1, exp: '快取記憶體 (Cache) 採用高速 SRAM，暫存常用資料以降低延遲。' },
+      { q: 'CPU 中的「程式計數器 (Program Counter, PC)」主要用途為何？', opts: ['暫存運算結果', '記錄 CPU 運作時間', '暫存正在執行的指令', '存放下一個要執行指令的位址'], ans: 3, exp: 'PC 存放下一個要執行的指令位址；IR 才存放正在執行的指令。' },
+      { q: '某一 CPU 的時脈頻率為 4.0 GHz，其中 GHz 是指每秒震盪多少次？', opts: ['每秒 100 萬次', '每秒 1000 萬次', '每秒 1 億次', '每秒 10 億次'], ans: 3, exp: 'Giga (G) 代表 10⁹（十億），4.0 GHz 即每秒震盪 40 億次。' },
+      { q: '下列哪一種記憶體的存取速度「最快」？', opts: ['暫存器 (Register)', '快取記憶體 (Cache)', '主記憶體 (RAM)', '固態硬碟 (SSD)'], ans: 0, exp: '速度排序：暫存器 > 快取 (L1>L2>L3) > 主記憶體 > 輔助記憶體。' },
+      { q: '關於固態硬碟 (SSD) 與傳統硬碟 (HDD) 的敘述，何者正確？', opts: ['HDD 採用快閃記憶體', 'SSD 較怕晃動', 'SSD 不需要進行磁碟重組', 'SSD 的 RPM 轉速較高'], ans: 2, exp: 'SSD 無機械馬達與磁盤，耐震、無噪音且不需進行磁碟重組。' },
+      { q: '小美買了新的喇叭，應該要將插頭接在電腦背面的哪一個連接埠？', opts: ['line in', 'line out', 'mic in', 'RJ-45'], ans: 1, exp: '喇叭為輸出設備，應接在音源輸出 (line out) 插孔。' },
+      { q: '銀行存摺補登機常發出較大聲響，且能列印多聯複寫文件，屬於哪種印表機？', opts: ['噴墨印表機', '點矩陣印表機', '雷射印表機', '3D 印表機'], ans: 1, exp: '點矩陣印表機屬於撞擊式印表機，利用撞針撞擊色帶，可印複寫文件。' },
+      { q: '可折疊螢幕的智慧型手機，其螢幕最可能採用哪一種自發光材質？', opts: ['有機發光二極體 (OLED)', '液晶 (LCD)', '快閃記憶體', '隨機存取記憶體'], ans: 0, exp: 'OLED 可自行發光不需背光模組，具有輕薄、可捲曲折疊的特性。' },
+      { q: '下列何者為「非揮發性記憶體」，關閉電源後資料仍會保留且常應用於隨身碟？', opts: ['DRAM', 'SRAM', 'Flash Memory', 'Register'], ans: 2, exp: '快閃記憶體 (Flash Memory) 屬非揮發性，廣泛應用於手機、隨身碟與記憶卡。' }
+    ];
+
+    // 反覆演練邏輯
+    let pIdx = 0;
+    function renderPractice() {
+      const item = questionBank[pIdx];
+      document.getElementById('practiceCounter').textContent = `第 ${pIdx + 1} / ${questionBank.length} 題`;
+      document.getElementById('practiceQ').textContent = item.q;
+      const box = document.getElementById('practiceOptions');
+      box.innerHTML = '';
+      document.getElementById('practiceFeedback').style.display = 'none';
+      item.opts.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.className = 'option-btn';
+        b.textContent = `(${String.fromCharCode(65+i)}) ${opt}`;
+        b.onclick = () => checkPractice(i, b);
+        box.appendChild(b);
+      });
+    }
+    function checkPractice(choice, btn) {
+      const item = questionBank[pIdx];
+      const fb = document.getElementById('practiceFeedback');
+      fb.style.display = 'block';
+      if (choice === item.ans) {
+        btn.classList.add('correct');
+        playTone('ok');
+        fb.innerHTML = `✅ <b>答對了！</b> ${item.exp}`;
+        portfolio.practiceCount++;
+        savePortfolio();
+      } else {
+        btn.classList.add('wrong');
+        playTone('err');
+        fb.innerHTML = `❌ <b>再想想看！</b> 正確答案是 (${String.fromCharCode(65+item.ans)})。${item.exp}`;
+      }
+    }
+    function nextPractice() { playTone('click'); pIdx = (pIdx + 1) % questionBank.length; renderPractice(); }
+    function shufflePractice() { playTone('click'); pIdx = Math.floor(Math.random() * questionBank.length); renderPractice(); }
+
+    // 單元測驗邏輯
+    let qIdx = 0, qScore = 0;
+    function startQuiz() {
+      playTone('click');
+      qIdx = 0; qScore = 0;
+      document.getElementById('quizStartCard').style.display = 'none';
+      document.getElementById('quizResultCard').style.display = 'none';
+      document.getElementById('quizPlayCard').style.display = 'block';
+      renderQuiz();
+    }
+    function renderQuiz() {
+      const item = questionBank[qIdx];
+      document.getElementById('quizProgress').textContent = `${qIdx + 1} / ${questionBank.length}`;
+      document.getElementById('quizScoreLive').textContent = `得分：${qScore}`;
+      document.getElementById('quizQ').textContent = item.q;
+      const box = document.getElementById('quizOptions');
+      box.innerHTML = '';
+      item.opts.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.className = 'option-btn';
+        b.textContent = `(${String.fromCharCode(65+i)}) ${opt}`;
+        b.onclick = () => {
+          if (i === item.ans) { qScore += 10; playTone('ok'); } else { playTone('err'); }
+          qIdx++;
+          if (qIdx < questionBank.length) renderQuiz();
+          else finishQuiz();
+        };
+        box.appendChild(b);
+      });
+    }
+    function finishQuiz() {
+      document.getElementById('quizPlayCard').style.display = 'none';
+      document.getElementById('quizResultCard').style.display = 'block';
+      document.getElementById('quizFinalScore').textContent = `${qScore} 分 / 100 分`;
+      document.getElementById('quizComment').textContent = qScore >= 80 ? '🌟 太棒了！你對硬體架構掌握非常純熟！' : '💪 繼續加油，建議回到互動教材與反覆演練再複習一次！';
+      portfolio.quizScores.push({ score: qScore, time: new Date().toLocaleString() });
+      if (qScore > portfolio.bestScore) portfolio.bestScore = qScore;
+      addLog(`完成單元測驗，獲得 ${qScore} 分`);
+      savePortfolio();
+    }
+
+    // ========= 5. 學習歷程紀錄與下載 =========
+    let portfolio = JSON.parse(localStorage.getItem('hw_portfolio_v1')) || {
+      studentName: '',
+      practiceCount: 0,
+      bestScore: 0,
+      quizScores: [],
+      logs: []
+    };
+
+    function addLog(action) {
+      const time = new Date().toLocaleTimeString();
+      portfolio.logs.unshift(`[${time}] ${action}`);
+      if (portfolio.logs.length > 50) portfolio.logs.pop();
+      savePortfolio();
+    }
+    function saveStudentName() {
+      portfolio.studentName = document.getElementById('studentNameInput').value;
+      savePortfolio();
+    }
+    function savePortfolio() {
+      localStorage.setItem('hw_portfolio_v1', JSON.stringify(portfolio));
+      renderPortfolio();
+    }
+    function renderPortfolio() {
+      document.getElementById('studentNameInput').value = portfolio.studentName || '';
+      document.getElementById('portfolioStats').innerHTML = `
+        <div class="card" style="margin:0; text-align:center;"><h3>${portfolio.practiceCount}</h3><small>演練答對次數</small></div>
+        <div class="card" style="margin:0; text-align:center;"><h3>${portfolio.quizScores.length}</h3><small>完成測驗次數</small></div>
+        <div class="card" style="margin:0; text-align:center;"><h3 style="color:var(--secondary);">${portfolio.bestScore} 分</h3><small>測驗最高分</small></div>
+      `;
+      document.getElementById('portfolioLogs').innerHTML = portfolio.logs.length
+        ? portfolio.logs.map(l => `<div>• ${l}</div>`).join('')
+        : '<div>尚無學習紀錄，快去探索互動教材吧！</div>';
+    }
+    function downloadPortfolio(format) {
+      playTone('ok');
+      const name = portfolio.studentName || '未填寫姓名';
+      let content, mime, ext;
+      if (format === 'json') {
+        content = JSON.stringify(portfolio, null, 2);
+        mime = 'application/json'; ext = 'json';
+      } else {
+        content = `=== 系統平台的組成架構－硬體｜學習歷程報告 ===\n` +
+                  `學生姓名：${name}\n匯出時間：${new Date().toLocaleString()}\n` +
+                  `演練答對次數：${portfolio.practiceCount}\n` +
+                  `測驗完成次數：${portfolio.quizScores.length}\n` +
+                  `測驗最高分：${portfolio.bestScore} 分\n\n` +
+                  `【詳細學習軌跡】\n` + portfolio.logs.join('\n');
+        mime = 'text/plain;charset=utf-8'; ext = 'txt';
+      }
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `硬體架構學習歷程_${name}.${ext}`;
+      a.click();
+    }
+    function clearPortfolio() {
+      if (confirm('確定要清除所有學習歷程紀錄嗎？')) {
+        portfolio = { studentName: '', practiceCount: 0, bestScore: 0, quizScores: [], logs: [] };
+        savePortfolio();
+      }
+    }
+
+    // ========= 6. 分頁切換與七大顯示操作設定 =========
+    function switchTab(id, btn) {
+      playTone('click');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('sec-' + id).classList.add('active');
+      if (btn) btn.classList.add('active');
+      addLog(`切換至分頁：${id}`);
+    }
+
+    function openSettings() { playTone('click'); document.getElementById('settingsModal').classList.add('open'); }
+    function closeSettings() { playTone('click'); document.getElementById('settingsModal').classList.remove('open'); }
+
+    function setActiveBtn(prefix, val) {
+      document.querySelectorAll(`[id^="${prefix}-"]`).forEach(b => b.classList.remove('active'));
+      const target = document.getElementById(`${prefix}-${val}`);
+      if (target) target.classList.add('active');
+    }
+
+    // (1) 全螢幕
+    function setFullscreen(on) {
+      playTone('click');
+      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else if (!on && document.fullscreenElement) document.exitFullscreen?.();
+      setActiveBtn('fs', on ? 'on' : 'off');
+    }
+    // (2) 音效
+    function setSound(on) {
+      soundEnabled = on;
+      if (on) playTone('ok');
+      setActiveBtn('snd', on ? 'on' : 'off');
+    }
+    // (3) 裝置
+    function setDevice(mode) {
+      playTone('click');
+      document.body.classList.remove('device-mobile', 'device-tablet', 'device-desktop');
+      if (mode !== 'auto') document.body.classList.add('device-' + mode);
+      setActiveBtn('dev', mode);
+    }
+    // (4) 版面
+    function setLayout(mode) {
+      playTone('click');
+      document.body.classList.remove('layout-portrait', 'layout-landscape');
+      if (mode !== 'auto') document.body.classList.add('layout-' + mode);
+      setActiveBtn('lay', mode);
+    }
+    // (5) 語言
+    function setLang(lang) {
+      playTone('click');
+      currentLang = lang;
+      applyI18n();
+      setActiveBtn('lang', lang);
+    }
+    // (6) 字體
+    function setFontSize(size) {
+      playTone('click');
+      const map = { sm: '15px', md: '18px', lg: '22px' };
+      document.documentElement.style.setProperty('--base-font', map[size]);
+      setActiveBtn('font', size);
+    }
+    // (7) 色系
+    function setTheme(mode) {
+      playTone('click');
+      if (mode === 'system') {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', mode);
+      }
+      setActiveBtn('thm', mode);
+    }
+
+    // 初始化
+    window.addEventListener('DOMContentLoaded', () => {
+      setTheme('system');
+      setCycleStep(0, false);
+      renderPractice();
+      renderPortfolio();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>
