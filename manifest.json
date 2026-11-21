@@ -1,0 +1,17 @@
+JSON
+{
+  "name": "系統平台的組成架構－硬體｜互動學習網",
+  "short_name": "硬體架構學習網",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f9ff",
+  "theme_color": "#0284c7",
+  "description": "數位科技概論第三章互動視覺化學習網，支援國語與台灣台語切換、測驗與學習歷程下載。",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230284c7'/><text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-size='56'>💻</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
